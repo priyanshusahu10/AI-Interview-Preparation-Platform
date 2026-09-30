@@ -34,11 +34,17 @@ async function userRegister(req,res){
         const token = jwt.sign({
             id:user._id,
             username:user.username},
-
                 process.env.JWT_SCRETE,
-                
         )
-        res.cookie('token',token)
+
+        const cookieOptions = {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        }
+
+        res.cookie('token', token, cookieOptions)
 
         res.status(201).json({
             message:"User registered Successfully",
@@ -72,10 +78,17 @@ async function loginController(req,res){
      const token = jwt.sign({
             id:user._id,
             username:user.username},
-
                 process.env.JWT_SCRETE
         )
-        res.cookie("token", token) 
+
+        const cookieOptions = {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        }
+
+        res.cookie("token", token, cookieOptions) 
         res.status(201).json({
             message:"User Login Successfully",
             user:{
@@ -96,7 +109,11 @@ async function logoutController(req,res){
         await blackListToken.create({token})
     }
      
-    res.clearCookie("token")
+    res.clearCookie("token", {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none"
+    })
 
     res.status(200).json({
         message:"User Logout Successfully"

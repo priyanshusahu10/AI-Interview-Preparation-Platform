@@ -37,6 +37,8 @@ import {
   Flame
 } from "lucide-react";
 
+import { API_BASE_URL } from "../../config/api.config";
+
 const Landing = () => {
   const navigate = useNavigate();
 
@@ -68,7 +70,7 @@ const Landing = () => {
     const payload = { name, email, subject, message };
 
     try {
-      const response = await axios.post("http://localhost:8000/api/auth/contact", payload);
+      const response = await axios.post(`${API_BASE_URL}/api/auth/contact`, payload);
       setFormStatus({
         state: "success",
         message: response?.data?.message || "Thank you! Your message has been sent successfully."
