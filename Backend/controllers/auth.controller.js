@@ -5,134 +5,166 @@ const blackListToken = require('../models/blacklist.model')
 const nodemailer = require("nodemailer");
 const Middleware = require('../middleware/auth.middleware')
 
-async function userRegister(req,res){
-        const{username , email , password} = req.body
-        if(!username || !email || !password){
+const isProduction = process.env.NODE_ENV === "production";
+const getCookieOptions = () => ({
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000
+});
+
+async function userRegister(req, res) {
+    try {
+        const { username, email, password } = req.body;
+        if (!username || !email || !password) {
             return res.status(400).json({
-                message:"Please provide username , email , password"
-            })
+                message: "Please provide username, email, and password"
+            });
         }
 
-        const IsuserExist = await userModel.findOne({
-            $or: [{username},
-                {email}]
-        })
+        const isUserExist = await userModel.findOne({
+            $or: [{ username }, { email }]
+        });
 
-        if(IsuserExist){
-            return res.status(401).json({
-                message:"User already exist"
-            })
+        if (isUserExist) {
+            return res.status(400).json({
+                message: isUserExist.email === email 
+                    ? "Email is already registered" 
+                    : "Username is already taken"
+            });
         }
 
-        const hash = await bcrypt.hash(password, 10)
+        const hash = await bcrypt.hash(password, 10);
         const user = await userModel.create({
             username,
             email,
             password: hash
-        })
+        });
 
-        const token = jwt.sign({
-            id:user._id,
-            username:user.username},
-                process.env.JWT_SCRETE,
-        )
+        const token = jwt.sign(
+            {
+                id: user._id,
+                username: user.username
+            },
+            process.env.JWT_SECRET || process.env.JWT_SCRETE || "default_jwt_secret"
+        );
 
-        const cookieOptions = {
-            httpOnly: true,
-            secure: true,
-            sameSite: "none",
-            maxAge: 7 * 24 * 60 * 60 * 1000
-        }
+        res.cookie('token', token, getCookieOptions());
 
-        res.cookie('token', token, cookieOptions)
-
-        res.status(201).json({
-            message:"User registered Successfully",
-            user:{
-                id:user._id,
-                username:user.username,
-                email:user.email,
+        return res.status(201).json({
+            message: "User registered successfully",
+            token,
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
             }
-        })
-        console.log(JSON.req.body)
+        });
+    } catch (err) {
+        console.error("Registration error:", err);
+        return res.status(500).json({
+            message: "Failed to register user. Please try again."
+        });
+    }
 }
 
-async function loginController(req,res){
-    const {email,password} = req.body
-    const user = await userModel.findOne({email})
-
-    if(!user){
-        return res.status(400).json({
-            message:"Invaild email or password"
-        })
-    }
-
-    const IspasswordValid = await bcrypt.compare(password, user.password)
-
-    if(!IspasswordValid){
-        return res.status(400).json({
-            message:"Invalid email or password"
-        })
-    }
-
-     const token = jwt.sign({
-            id:user._id,
-            username:user.username},
-                process.env.JWT_SCRETE
-        )
-
-        const cookieOptions = {
-            httpOnly: true,
-            secure: true,
-            sameSite: "none",
-            maxAge: 7 * 24 * 60 * 60 * 1000
+async function loginController(req, res) {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).json({
+                message: "Please provide email and password"
+            });
         }
 
-        res.cookie("token", token, cookieOptions) 
-        res.status(201).json({
-            message:"User Login Successfully",
-            user:{
-                id:user.id,
-                username:user.username,
-                email:user.email
+        const user = await userModel.findOne({ email });
+
+        if (!user) {
+            return res.status(400).json({
+                message: "Invalid email or password"
+            });
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if (!isPasswordValid) {
+            return res.status(400).json({
+                message: "Invalid email or password"
+            });
+        }
+
+        const token = jwt.sign(
+            {
+                id: user._id,
+                username: user.username
+            },
+            process.env.JWT_SECRET || process.env.JWT_SCRETE || "default_jwt_secret"
+        );
+
+        res.cookie("token", token, getCookieOptions());
+
+        return res.status(200).json({
+            message: "User logged in successfully",
+            token,
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email
             }
-            
-        })
-        console.log("User Login Successfully")
-        
+        });
+    } catch (err) {
+        console.error("Login error:", err);
+        return res.status(500).json({
+            message: "Failed to log in. Please try again."
+        });
+    }
 }
 
-async function logoutController(req,res){
-    const token = req.cookies.token
+async function logoutController(req, res) {
+    const token = req.cookies?.token;
 
-    if(token){
-        await blackListToken.create({token})
+    if (token) {
+        try {
+            await blackListToken.create({ token });
+        } catch (e) {
+            // Token might already be blacklisted or db issue
+        }
     }
      
     res.clearCookie("token", {
         httpOnly: true,
-        secure: true,
-        sameSite: "none"
-    })
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax"
+    });
 
-    res.status(200).json({
-        message:"User Logout Successfully"
-    })
+    return res.status(200).json({
+        message: "User Logout Successfully"
+    });
 }
 
-
-async function getUser(req,res){
-    const user = await userModel.findById(req.user.id)
-    res.status(200).json({
-        message:"User detail fetched successfully",
-        user:{
-            id:user._id,
-            username:user.username,
-            email:user.email
+async function getUser(req, res) {
+    try {
+        const user = await userModel.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found"
+            });
         }
-    })
 
-    
+        return res.status(200).json({
+            message: "User detail fetched successfully",
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email
+            }
+        });
+    } catch (err) {
+        console.error("getUser error:", err);
+        return res.status(500).json({
+            message: "Failed to fetch user"
+        });
+    }
 }
 
 

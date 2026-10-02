@@ -9,22 +9,24 @@ export const Authprovider = ({children}) =>{
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-    async function fetchUser() {
-        setLoading(true);
-
-        try {
-            const data = await getUser();
-
-            if (data?.user) {
-                setUser(data.user);
+        async function fetchUser() {
+            setLoading(true);
+            try {
+                const data = await getUser();
+                if (data?.user) {
+                    setUser(data.user);
+                } else {
+                    setUser(null);
+                }
+            } catch (err) {
+                setUser(null);
+            } finally {
+                setLoading(false);
             }
-        } finally {
-            setLoading(false);
         }
-    }
 
-    fetchUser();
-}, []);
+        fetchUser();
+    }, []);
 
     return (
         <AuthContext.Provider value={{
