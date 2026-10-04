@@ -1850,6 +1850,7 @@ html {
   }
   .mobile-toggle-btn {
     display: block;
+     margin-left: 20rem;
   }
   .mockup-tabs {
     grid-template-columns: repeat(2, 1fr);
