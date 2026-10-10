@@ -15,8 +15,20 @@ const NAV_ITEMS = [
 const QuestionCard = ({ item, index }) => {
     const [ open, setOpen ] = useState(false)
     return (
-        <div className='q-card'>
-            <div className='q-card__header' onClick={() => setOpen(o => !o)}>
+        <div className={`q-card ${open ? 'q-card--open' : ''}`}>
+            <div 
+                className='q-card__header' 
+                onClick={() => setOpen(o => !o)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        setOpen(o => !o)
+                    }
+                }}
+                aria-expanded={open}
+            >
                 <span className='q-card__index'>Q{index + 1}</span>
                 <p className='q-card__question'>{item.question}</p>
                 <span className={`q-card__chevron ${open ? 'q-card__chevron--open' : ''}`}>
@@ -49,7 +61,7 @@ const RoadMapDay = ({ day }) => (
             {day.tasks.map((task, i) => (
                 <li key={i}>
                     <span className='roadmap-day__bullet' />
-                    {task}
+                    <span>{task}</span>
                 </li>
             ))}
         </ul>
@@ -61,14 +73,13 @@ const Interview = () => {
     const [ activeNav, setActiveNav ] = useState('technical')
     const { report, getReportById, loading, getResumePdf } = useInterview()
     const { interviewId } = useParams()
+    const navigate = useNavigate()
 
     useEffect(() => {
         if (interviewId) {
             getReportById(interviewId)
         }
     }, [ interviewId ])
-
-
 
     if (loading || !report) {
         return (
@@ -80,31 +91,40 @@ const Interview = () => {
         report.matchScore >= 80 ? 'score--high' :
             report.matchScore >= 60 ? 'score--mid' : 'score--low'
 
-
     return (
         <div className='interview-page'>
             <div className='interview-layout'>
 
-                {/* ── Left Nav ── */}
+                {/* ── Left / Top Nav ── */}
                 <nav className='interview-nav'>
                     <div className="nav-content">
+                        <button
+                            onClick={() => navigate('/generate-report')}
+                            className='interview-back-btn'
+                            title="Back to Generator"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+                            <span>Back</span>
+                        </button>
                         <p className='interview-nav__label'>Sections</p>
-                        {NAV_ITEMS.map(item => (
-                            <button
-                                key={item.id}
-                                className={`interview-nav__item ${activeNav === item.id ? 'interview-nav__item--active' : ''}`}
-                                onClick={() => setActiveNav(item.id)}
-                            >
-                                <span className='interview-nav__icon'>{item.icon}</span>
-                                {item.label}
-                            </button>
-                        ))}
+                        <div className="interview-nav__list">
+                            {NAV_ITEMS.map(item => (
+                                <button
+                                    key={item.id}
+                                    className={`interview-nav__item ${activeNav === item.id ? 'interview-nav__item--active' : ''}`}
+                                    onClick={() => setActiveNav(item.id)}
+                                >
+                                    <span className='interview-nav__icon'>{item.icon}</span>
+                                    <span className='interview-nav__text'>{item.label}</span>
+                                </button>
+                            ))}
+                        </div>
                     </div>
                     <button
                         onClick={() => { getResumePdf(interviewId) }}
                         className='button primary-button' >
-                        <svg height={"0.8rem"} style={{ marginRight: "0.8rem" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.6144 17.7956 11.492 15.7854C12.2731 13.9966 13.6789 12.5726 15.4325 11.7942L17.8482 10.7219C18.6162 10.381 18.6162 9.26368 17.8482 8.92277L15.5079 7.88394C13.7092 7.08552 12.2782 5.60881 11.5105 3.75894L10.6215 1.61673C10.2916.821765 9.19319.821767 8.8633 1.61673L7.97427 3.75892C7.20657 5.60881 5.77553 7.08552 3.97685 7.88394L1.63658 8.92277C.868537 9.26368.868536 10.381 1.63658 10.7219L4.0523 11.7942C5.80589 12.5726 7.21171 13.9966 7.99275 15.7854L8.8704 17.7956C9.20776 18.5682 10.277 18.5682 10.6144 17.7956ZM19.4014 22.6899 19.6482 22.1242C20.0882 21.1156 20.8807 20.3125 21.8695 19.8732L22.6299 19.5353C23.0412 19.3526 23.0412 18.7549 22.6299 18.5722L21.9121 18.2532C20.8978 17.8026 20.0911 16.9698 19.6586 15.9269L19.4052 15.3156C19.2285 14.8896 18.6395 14.8896 18.4628 15.3156L18.2094 15.9269C17.777 16.9698 16.9703 17.8026 15.956 18.2532L15.2381 18.5722C14.8269 18.7549 14.8269 19.3526 15.2381 19.5353L15.9985 19.8732C16.9874 20.3125 17.7798 21.1156 18.2198 22.1242L18.4667 22.6899C18.6473 23.104 19.2207 23.104 19.4014 22.6899Z"></path></svg>
-                        Download Resume
+                        <svg height={"0.85rem"} width={"0.85rem"} style={{ marginRight: "0.5rem" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.6144 17.7956 11.492 15.7854C12.2731 13.9966 13.6789 12.5726 15.4325 11.7942L17.8482 10.7219C18.6162 10.381 18.6162 9.26368 17.8482 8.92277L15.5079 7.88394C13.7092 7.08552 12.2782 5.60881 11.5105 3.75894L10.6215 1.61673C10.2916.821765 9.19319.821767 8.8633 1.61673L7.97427 3.75892C7.20657 5.60881 5.77553 7.08552 3.97685 7.88394L1.63658 8.92277C.868537 9.26368.868536 10.381 1.63658 10.7219L4.0523 11.7942C5.80589 12.5726 7.21171 13.9966 7.99275 15.7854L8.8704 17.7956C9.20776 18.5682 10.277 18.5682 10.6144 17.7956ZM19.4014 22.6899 19.6482 22.1242C20.0882 21.1156 20.8807 20.3125 21.8695 19.8732L22.6299 19.5353C23.0412 19.3526 23.0412 18.7549 22.6299 18.5722L21.9121 18.2532C20.8978 17.8026 20.0911 16.9698 19.6586 15.9269L19.4052 15.3156C19.2285 14.8896 18.6395 14.8896 18.4628 15.3156L18.2094 15.9269C17.777 16.9698 16.9703 17.8026 15.956 18.2532L15.2381 18.5722C14.8269 18.7549 14.8269 19.3526 15.2381 19.5353L15.9985 19.8732C16.9874 20.3125 17.7798 21.1156 18.2198 22.1242L18.4667 22.6899C18.6473 23.104 19.2207 23.104 19.4014 22.6899Z"></path></svg>
+                        <span>Download Resume</span>
                     </button>
                 </nav>
 
@@ -160,17 +180,22 @@ const Interview = () => {
 
                 <div className='interview-divider' />
 
-                {/* ── Right Sidebar ── */}
+                {/* ── Right Sidebar / Top Overview on Mobile ── */}
                 <aside className='interview-sidebar'>
 
                     {/* Match Score */}
                     <div className='match-score'>
                         <p className='match-score__label'>Match Score</p>
-                        <div className={`match-score__ring ${scoreColor}`}>
-                            <span className='match-score__value'>{report.matchScore ?? 0}</span>
-                            <span className='match-score__pct'>%</span>
+                        <div className='match-score__card'>
+                            <div className={`match-score__ring ${scoreColor}`}>
+                                <span className='match-score__value'>{report.matchScore ?? 0}</span>
+                                <span className='match-score__pct'>%</span>
+                            </div>
+                            <div className='match-score__info'>
+                                <span className='match-score__badge'>Overall Match</span>
+                                <p className='match-score__sub'>Match analysis for this role</p>
+                            </div>
                         </div>
-                        <p className='match-score__sub'>Match analysis for this role</p>
                     </div>
 
                     <div className='sidebar-divider' />
@@ -179,11 +204,15 @@ const Interview = () => {
                     <div className='skill-gaps'>
                         <p className='skill-gaps__label'>Skill Gaps</p>
                         <div className='skill-gaps__list'>
-                            {(report.skillGaps || []).map((gap, i) => (
-                                <span key={i} className={`skill-tag skill-tag--${gap.severity || 'medium'}`}>
-                                    {gap.skill}
-                                </span>
-                            ))}
+                            {(report.skillGaps && report.skillGaps.length > 0) ? (
+                                report.skillGaps.map((gap, i) => (
+                                    <span key={i} className={`skill-tag skill-tag--${gap.severity || 'medium'}`}>
+                                        {gap.skill}
+                                    </span>
+                                ))
+                            ) : (
+                                <span className='skill-tag skill-tag--low'>No major gaps</span>
+                            )}
                         </div>
                     </div>
 

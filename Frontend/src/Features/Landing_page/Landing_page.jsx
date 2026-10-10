@@ -927,18 +927,13 @@ const Landing = () => {
                 </div>
                 <div>
                   <h5>Email Support</h5>
-                  <p>support@prepai.io</p>
+                  <p>priyanshusahu708@gmail.com</p>
                 </div>
               </div>
 
               <div className="contact-point-item">
-                <div className="point-icon-box">
-                  <Phone size={20} />
-                </div>
-                <div>
-                  <h5>Phone & WhatsApp</h5>
-                  <p>+91 98765 43210</p>
-                </div>
+               
+               
               </div>
 
               <div className="contact-point-item">
@@ -946,7 +941,7 @@ const Landing = () => {
                   <MapPin size={20} />
                 </div>
                 <div>
-                  <h5>HQ Location</h5>
+                  <h5>Location</h5>
                   <p>Kanpur, Uttar Pradesh, India</p>
                 </div>
               </div>
