@@ -1851,7 +1851,11 @@ html {
   }
   .mobile-toggle-btn {
     display: block;
+<<<<<<< HEAD
     margin-left: 20rem;
+=======
+     margin-left: 20rem;
+>>>>>>> 8f26e8d711e19fef4a2181ef57213337e77ad27a
   }
   .mockup-tabs {
     grid-template-columns: repeat(2, 1fr);
